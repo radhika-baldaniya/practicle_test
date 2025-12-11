@@ -4,13 +4,11 @@
 
 <div class="container mt-4">
 
-    <!-- ORDER HEADER -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="fw-bold">Order #{{ $order->id }}</h3>
         <a href="{{ route('admin.orders.index') }}" class="btn btn-secondary">Back</a>
     </div>
 
-    <!-- ORDER SUMMARY CARD -->
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-primary text-white">
             <h5 class="mb-0">Order Summary</h5>
@@ -26,12 +24,16 @@
 
                 <div class="col-md-4">
                     <strong class="text-muted d-block">Email</strong>
-                    <span>{{ $order->customer->email }}</span>
+                    <a href="mailto:{{ $order->customer->email }}">
+                        {{ $order->customer->email }}
+                    </a>
                 </div>
 
                 <div class="col-md-4">
                     <strong class="text-muted d-block">Phone</strong>
-                    <span>{{ $order->customer->phone }}</span>
+                    <a href="tel:{{ $order->customer->phone }}">
+                        {{ $order->customer->phone }}
+                    </a>
                 </div>
             </div>
 
@@ -66,7 +68,6 @@
         </div>
     </div>
 
-    <!-- ORDER ITEMS TABLE -->
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-dark text-white">
             <h5 class="mb-0">Order Items</h5>
@@ -99,7 +100,6 @@
         </div>
     </div>
 
-    <!-- STATUS UPDATE -->
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-info text-white">
             <h5 class="mb-0">Update Order Status</h5>

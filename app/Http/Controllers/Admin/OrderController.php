@@ -35,7 +35,8 @@ class OrderController extends Controller
     public function create()
     {
         $customers = Customer::orderBy('name')->get();
-        $products = Product::orderBy('name')->get();
+        $products = Product::where('stock_quantity', '>', 0)->orderBy('name')->get();
+
         return view('admin.orders.create', compact('customers', 'products'));
     }
 
@@ -47,54 +48,60 @@ class OrderController extends Controller
         $data = $request->validated();
 
         DB::beginTransaction();
+
         try {
+
+            $merged = [];
             foreach ($data['products'] as $p) {
-                $product = Product::findOrFail($p['product_id']);
-                if ($p['quantity'] > $product->stock_quantity) {
+                if (!isset($merged[$p['product_id']])) {
+                    $merged[$p['product_id']] = 0;
+                }
+                $merged[$p['product_id']] += $p['quantity'];
+            }
+            foreach ($merged as $productId => $totalQty) {
+                $product = Product::findOrFail($productId);
+
+                if ($totalQty > $product->stock_quantity) {
                     DB::rollBack();
-                    return redirect()->back()
-                        ->withInput()
-                        ->withErrors(['stock' => "Insufficient stock for product: {$product->name}"]);
+                    return back()->withInput()->withErrors(['stock' => "Insufficient stock for product: {$product->name}"]);
                 }
             }
 
             $total = 0;
             foreach ($data['products'] as $p) {
-                $lineTotal = $p['quantity'] * $p['price'];
-                $total += $lineTotal;
+                $total += $p['quantity'] * $p['price'];
             }
-
+         
             $order = Order::create([
-                'customer_id' => $data['customer_id'],
+                'customer_id'  => $data['customer_id'],
                 'total_amount' => $total,
-                'order_date' => $data['order_date'] ? Carbon::parse($data['order_date']) : Carbon::today(),
-                'status' => 'Pending',
+                'order_date'   => $data['order_date'] ? Carbon::parse($data['order_date']) : Carbon::today(),
+                'status'       => 'Pending',
             ]);
 
             foreach ($data['products'] as $p) {
                 $product = Product::lockForUpdate()->findOrFail($p['product_id']);
+
                 if ($p['quantity'] > $product->stock_quantity) {
                     DB::rollBack();
-                    return redirect()->back()
-                        ->withInput()
-                        ->withErrors(['stock' => "Insufficient stock for product: {$product->name}"]);
+                    return back()->withInput()->withErrors(['stock' => "Insufficient stock for product: {$product->name}"]);
                 }
-
                 OrderItem::create([
-                    'order_id' => $order->id,
+                    'order_id'   => $order->id,
                     'product_id' => $product->id,
-                    'quantity' => $p['quantity'],
-                    'price' => $p['price'],
+                    'quantity'   => $p['quantity'],
+                    'price'      => $p['price'],
                 ]);
-
                 $product->decrement('stock_quantity', $p['quantity']);
             }
 
             DB::commit();
-            return redirect()->route('admin.orders.index', $order->id)->with('success', 'Order created successfully.');
+
+            return redirect()->route('admin.orders.index')->with('success', 'Order created successfully.');
+
         } catch (\Throwable $e) {
             DB::rollBack();
-            return redirect()->back()->withInput()->withErrors(['error' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
