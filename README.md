@@ -1,6 +1,7 @@
 Laravel 12 Project Installation Guide
 1. Clone the Project
-git clone [git@github.com:radhika-baldaniya/practicle_test.git](https://github.com/radhika-baldaniya/practicle_test.git)
+git clone https://github.com/radhika-baldaniya/practicle_test.git
+
 cd practicle_test
 
 2. Install Dependencies
